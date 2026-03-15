@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { MapPin, Clock, Star } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import Link from 'next/link';
+import { MapPin, Clock, Star } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import Link from "next/link";
 
 interface TaskCardProps {
   id: string;
@@ -12,15 +12,25 @@ interface TaskCardProps {
   rewardAmount: number;
   distance: number;
   category: string;
+  status: "open" | "accepted" | "completed" | "confirmed" | "cancelled";
+
   owner: {
     name: string;
     rating: number;
     profilePhoto?: string;
   };
+
+  acceptedBy?: {
+    _id: string;
+    name: string;
+  };
+
   createdAt: string;
+  acceptedAt?: string;
+  completedAt?: string;
+
   onAccept?: () => void;
 }
-
 export const TaskCard: React.FC<TaskCardProps> = ({
   id,
   title,
@@ -28,9 +38,13 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   rewardAmount,
   distance,
   category,
+  status,
   owner,
+  acceptedBy,
   createdAt,
-  onAccept
+  acceptedAt,
+  completedAt,
+  onAccept,
 }) => {
   const getTimeAgo = (date: string) => {
     const now = new Date();
@@ -54,7 +68,9 @@ export const TaskCard: React.FC<TaskCardProps> = ({
               {title}
             </h3>
           </Link>
-          <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{description}</p>
+          <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+            {description}
+          </p>
         </div>
         <div className="text-right ml-4">
           <div className="text-2xl font-bold text-primary">₹{rewardAmount}</div>
@@ -86,20 +102,47 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           )}
         </div>
         <div className="flex-1">
-          <div className="text-sm font-medium text-foreground">{owner.name}</div>
+          <div className="text-sm font-medium text-foreground">
+            {owner.name}
+          </div>
           <div className="flex items-center gap-1 text-xs">
             <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-            <span className="text-muted-foreground">{owner.rating.toFixed(1)}</span>
+            <span className="text-muted-foreground">
+              {owner.rating.toFixed(1)}
+            </span>
           </div>
         </div>
       </div>
 
-      <Button
-        onClick={onAccept}
-        className="w-full"
-      >
-        Accept Task
-      </Button>
+      {status === "open" && (
+        <Button onClick={onAccept} className="w-full">
+          Accept Task
+        </Button>
+      )}
+
+      {status === "accepted" && (
+        <div className="text-center text-yellow-600 font-medium">
+          Accepted by {acceptedBy?.name}
+        </div>
+      )}
+
+      {status === "completed" && (
+        <div className="text-center text-blue-600 font-medium">
+          Completed by {acceptedBy?.name} • Waiting for owner confirmation
+        </div>
+      )}
+
+      {status === "confirmed" && (
+        <div className="text-center text-green-600 font-medium">
+          Confirmed by {owner.name} ✔
+        </div>
+      )}
+
+      {status === "cancelled" && (
+        <div className="text-center text-red-600 font-medium">
+          Task cancelled
+        </div>
+      )}
     </Card>
   );
 };

@@ -1,15 +1,16 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useAuth } from '@/lib/authContext';
-import { ProtectedRoute } from '@/components/ProtectedRoute';
-import { TaskCard } from '@/components/TaskCard';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Spinner } from '@/components/ui/spinner';
-import { useToast } from '@/hooks/use-toast';
-import Link from 'next/link';
-import { Search, MapPin, Filter } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { useAuth } from "@/lib/authContext";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { TaskCard } from "@/components/TaskCard";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Spinner } from "@/components/ui/spinner";
+import { useToast } from "@/hooks/use-toast";
+import Link from "next/link";
+import { Search, MapPin, Filter } from "lucide-react";
+import { Navbar } from "@/components/ui/navigation-menu";
 
 interface Task {
   _id: string;
@@ -17,32 +18,46 @@ interface Task {
   description: string;
   rewardAmount: number;
   category: string;
+  status: "open" | "accepted" | "completed" | "confirmed" | "cancelled";
+
   location: {
     latitude: number;
     longitude: number;
     address: string;
   };
+
   owner: {
     _id: string;
     name: string;
     rating: number;
     profilePhoto?: string;
   };
+
+  acceptedBy?: {
+    _id: string;
+    name: string;
+  };
+
   createdAt: string;
+  acceptedAt?: string;
+  completedAt?: string;
+
   distance?: number;
 }
-
 export default function DashboardPage() {
   const { user, token } = useAuth();
   const { toast } = useToast();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
   const [radius, setRadius] = useState(10);
-  const [userLocation, setUserLocation] = useState<{ lat: number; lon: number } | null>(null);
+  const [userLocation, setUserLocation] = useState<{
+    lat: number;
+    lon: number;
+  } | null>(null);
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
   // Get user location on mount
   useEffect(() => {
@@ -51,14 +66,13 @@ export default function DashboardPage() {
         (position) => {
           setUserLocation({
             lat: position.coords.latitude,
-            lon: position.coords.longitude
+            lon: position.coords.longitude,
           });
         },
         (error) => {
-          console.error('Geolocation error:', error);
-          // Default location (San Francisco)
-          setUserLocation({ lat: 37.7749, lon: -122.4194 });
-        }
+          console.error("Geolocation error:", error);
+          setUserLocation({ lat: 37.7749, lon: -122.4194 }); // fallback location
+        },
       );
     }
   }, []);
@@ -70,84 +84,84 @@ export default function DashboardPage() {
         setLoading(false);
         return;
       }
-
       setLoading(true);
       try {
         const params = new URLSearchParams({
           latitude: userLocation.lat.toString(),
           longitude: userLocation.lon.toString(),
-          radius: radius.toString()
+          radius: radius.toString(),
         });
-
-        if (selectedCategory) {
-          params.append('category', selectedCategory);
-        }
+        if (selectedCategory) params.append("category", selectedCategory);
 
         const response = await fetch(`${API_URL}/api/tasks/nearby?${params}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
+          headers: { Authorization: `Bearer ${token}` },
         });
-
-        if (!response.ok) throw new Error('Failed to fetch tasks');
-
+        if (!response.ok) throw new Error("Failed to fetch tasks");
         const data = await response.json();
         setTasks(data.tasks);
       } catch (error) {
         toast({
-          title: 'Error',
-          description: error instanceof Error ? error.message : 'Failed to load tasks',
-          variant: 'destructive'
+          title: "Error",
+          description:
+            error instanceof Error ? error.message : "Failed to load tasks",
+          variant: "destructive",
         });
       } finally {
         setLoading(false);
       }
     };
-
     fetchTasks();
   }, [userLocation, token, selectedCategory, radius, API_URL, toast]);
 
   const handleAcceptTask = async (taskId: string) => {
     if (!token) return;
-
     try {
       const response = await fetch(`${API_URL}/api/tasks/${taskId}/accept`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
       });
-
-      if (!response.ok) throw new Error('Failed to accept task');
-
+      if (!response.ok) throw new Error("Failed to accept task");
       toast({
-        title: 'Success',
-        description: 'Task accepted! You can now contact the owner.',
-        duration: 2000
+        title: "Success",
+        description: "Task accepted! You can now contact the owner.",
+        duration: 2000,
       });
-
-      // Remove task from list
-      setTasks(tasks.filter(t => t._id !== taskId));
+      setTasks(tasks.filter((t) => t._id !== taskId));
     } catch (error) {
       toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to accept task',
-        variant: 'destructive'
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Failed to accept task",
+        variant: "destructive",
       });
     }
   };
 
-  const filteredTasks = tasks.filter(task => {
-    const matchesSearch = task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         task.description.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredTasks = tasks.filter((task) => {
+    const matchesSearch =
+      task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      task.description.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesSearch;
   });
 
-  const categories = ['shopping', 'delivery', 'cleaning', 'moving', 'repair', 'photography', 'tutoring'];
+  const categories = [
+    "shopping",
+    "delivery",
+    "cleaning",
+    "moving",
+    "repair",
+    "photography",
+    "tutoring",
+  ];
 
   return (
     <ProtectedRoute>
+      {/* Navbar added here */}
+      <Navbar />
+
       <main className="min-h-screen bg-background">
         {/* Header */}
         <header className="border-b border-border/40 bg-background/95 sticky top-0 z-40">
@@ -159,7 +173,6 @@ export default function DashboardPage() {
               </Link>
             </div>
 
-            {/* Location Info */}
             {userLocation && (
               <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
                 <MapPin className="w-4 h-4" />
@@ -167,7 +180,7 @@ export default function DashboardPage() {
               </div>
             )}
 
-            {/* Search and Filters */}
+            {/* Search & Filters */}
             <div className="space-y-4">
               <div className="flex gap-2">
                 <div className="flex-1 relative">
@@ -187,7 +200,9 @@ export default function DashboardPage() {
 
               {/* Radius Slider */}
               <div className="flex items-center gap-4">
-                <label className="text-sm font-medium text-foreground">Search Radius:</label>
+                <label className="text-sm font-medium text-foreground">
+                  Search Radius:
+                </label>
                 <input
                   type="range"
                   min="1"
@@ -196,22 +211,24 @@ export default function DashboardPage() {
                   onChange={(e) => setRadius(parseInt(e.target.value))}
                   className="flex-1 max-w-xs"
                 />
-                <span className="text-sm text-muted-foreground">{radius}km</span>
+                <span className="text-sm text-muted-foreground">
+                  {radius}km
+                </span>
               </div>
 
               {/* Categories */}
               <div className="flex gap-2 flex-wrap">
                 <Button
-                  variant={selectedCategory === '' ? 'default' : 'outline'}
+                  variant={selectedCategory === "" ? "default" : "outline"}
                   size="sm"
-                  onClick={() => setSelectedCategory('')}
+                  onClick={() => setSelectedCategory("")}
                 >
                   All
                 </Button>
-                {categories.map(cat => (
+                {categories.map((cat) => (
                   <Button
                     key={cat}
-                    variant={selectedCategory === cat ? 'default' : 'outline'}
+                    variant={selectedCategory === cat ? "default" : "outline"}
                     size="sm"
                     onClick={() => setSelectedCategory(cat)}
                     className="capitalize"
@@ -232,12 +249,16 @@ export default function DashboardPage() {
             </div>
           ) : filteredTasks.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-lg text-muted-foreground mb-4">No tasks found</p>
-              <p className="text-sm text-muted-foreground">Try adjusting your search or radius</p>
+              <p className="text-lg text-muted-foreground mb-4">
+                No tasks found
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Try adjusting your search or radius
+              </p>
             </div>
           ) : (
             <div className="grid gap-6">
-              {filteredTasks.map(task => (
+              {filteredTasks.map((task) => (
                 <TaskCard
                   key={task._id}
                   id={task._id}
@@ -248,6 +269,7 @@ export default function DashboardPage() {
                   category={task.category}
                   owner={task.owner}
                   createdAt={task.createdAt}
+                  status={task.status}
                   onAccept={() => handleAcceptTask(task._id)}
                 />
               ))}

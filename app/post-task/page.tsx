@@ -1,15 +1,15 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useAuth } from '@/lib/authContext';
-import { ProtectedRoute } from '@/components/ProtectedRoute';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import { useState } from "react";
+import { useAuth } from "@/lib/authContext";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 
 export default function PostTaskPage() {
   const { user, token } = useAuth();
@@ -17,22 +17,37 @@ export default function PostTaskPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    itemName: '',
-    category: 'shopping',
-    estimatedPrice: '',
-    rewardAmount: '',
-    address: ''
+    title: "",
+    description: "",
+    itemName: "",
+    category: "shopping",
+    estimatedPrice: "",
+    rewardAmount: "",
+    address: "",
   });
-  const [location, setLocation] = useState<{ lat: number; lon: number } | null>(null);
+  const [location, setLocation] = useState<{ lat: number; lon: number } | null>(
+    null,
+  );
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-  const categories = ['shopping', 'delivery', 'cleaning', 'moving', 'repair', 'photography', 'tutoring', 'other'];
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+  const categories = [
+    "shopping",
+    "delivery",
+    "cleaning",
+    "moving",
+    "repair",
+    "photography",
+    "tutoring",
+    "other",
+  ];
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >,
+  ) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleGetLocation = () => {
@@ -41,21 +56,22 @@ export default function PostTaskPage() {
         (position) => {
           setLocation({
             lat: position.coords.latitude,
-            lon: position.coords.longitude
+            lon: position.coords.longitude,
           });
           toast({
-            title: 'Success',
-            description: 'Location captured successfully',
-            duration: 2000
+            title: "Success",
+            description: "Location captured successfully",
+            duration: 2000,
           });
         },
-        (error) => {
+        () => {
           toast({
-            title: 'Error',
-            description: 'Failed to get location. Please enable location services.',
-            variant: 'destructive'
+            title: "Error",
+            description:
+              "Failed to get location. Please enable location services.",
+            variant: "destructive",
           });
-        }
+        },
       );
     }
   };
@@ -65,18 +81,24 @@ export default function PostTaskPage() {
 
     if (!location) {
       toast({
-        title: 'Error',
-        description: 'Please select a location for the task',
-        variant: 'destructive'
+        title: "Error",
+        description: "Please select a location for the task",
+        variant: "destructive",
       });
       return;
     }
 
-    if (!formData.title || !formData.description || !formData.itemName || !formData.estimatedPrice || !formData.rewardAmount) {
+    if (
+      !formData.title ||
+      !formData.description ||
+      !formData.itemName ||
+      !formData.estimatedPrice ||
+      !formData.rewardAmount
+    ) {
       toast({
-        title: 'Error',
-        description: 'Please fill in all required fields',
-        variant: 'destructive'
+        title: "Error",
+        description: "Please fill in all required fields",
+        variant: "destructive",
       });
       return;
     }
@@ -91,36 +113,37 @@ export default function PostTaskPage() {
         location: {
           latitude: location.lat,
           longitude: location.lon,
-          address: formData.address || 'Location set'
-        }
+          address: formData.address || "Location set",
+        },
       };
 
       const response = await fetch(`${API_URL}/api/tasks`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify(taskData)
+        body: JSON.stringify(taskData),
       });
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.message || 'Failed to create task');
+        throw new Error(data.message || "Failed to create task");
       }
 
       toast({
-        title: 'Success',
-        description: 'Task posted successfully!',
-        duration: 2000
+        title: "Success",
+        description: "Task posted successfully!",
+        duration: 2000,
       });
 
-      router.push('/my-tasks');
+      router.push("/my-tasks");
     } catch (error) {
       toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to post task',
-        variant: 'destructive'
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Failed to post task",
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -139,7 +162,9 @@ export default function PostTaskPage() {
                   Back
                 </Button>
               </Link>
-              <h1 className="text-3xl font-bold text-foreground">Post a New Task</h1>
+              <h1 className="text-3xl font-bold text-foreground">
+                Post a New Task
+              </h1>
             </div>
           </div>
         </header>
@@ -208,7 +233,7 @@ export default function PostTaskPage() {
                   disabled={loading}
                   className="w-full px-3 py-2 border border-input rounded-md text-foreground bg-background focus:outline-none focus:ring-2 focus:ring-primary"
                 >
-                  {categories.map(cat => (
+                  {categories.map((cat) => (
                     <option key={cat} value={cat} className="capitalize">
                       {cat.charAt(0).toUpperCase() + cat.slice(1)}
                     </option>
@@ -239,7 +264,8 @@ export default function PostTaskPage() {
                   Reward Amount (₹) *
                 </label>
                 <p className="text-xs text-muted-foreground mb-2">
-                  This amount will be locked from your wallet until task completion
+                  This amount will be locked from your wallet until task
+                  completion
                 </p>
                 <Input
                   type="number"
@@ -262,7 +288,8 @@ export default function PostTaskPage() {
                   {location ? (
                     <div className="p-3 bg-secondary/50 rounded-md border border-border">
                       <p className="text-sm font-medium text-foreground">
-                        Location: {location.lat.toFixed(4)}, {location.lon.toFixed(4)}
+                        Location: {location.lat.toFixed(4)},{" "}
+                        {location.lon.toFixed(4)}
                       </p>
                       <Button
                         type="button"
@@ -306,15 +333,15 @@ export default function PostTaskPage() {
 
               {/* Action Buttons */}
               <div className="flex gap-4 pt-4">
-                <Button
-                  type="submit"
-                  disabled={loading}
-                  className="flex-1"
-                >
-                  {loading ? 'Posting...' : 'Post Task'}
+                <Button type="submit" disabled={loading} className="flex-1">
+                  {loading ? "Posting..." : "Post Task"}
                 </Button>
                 <Link href="/my-tasks" className="flex-1">
-                  <Button variant="outline" disabled={loading} className="w-full">
+                  <Button
+                    variant="outline"
+                    disabled={loading}
+                    className="w-full"
+                  >
                     Cancel
                   </Button>
                 </Link>

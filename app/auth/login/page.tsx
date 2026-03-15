@@ -1,17 +1,17 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/lib/authContext';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
+import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/authContext";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const router = useRouter();
@@ -24,16 +24,16 @@ export default function LoginPage() {
     try {
       await login(email, password);
       toast({
-        title: 'Success',
-        description: 'Login successful!',
-        duration: 2000
+        title: "Success",
+        description: "Login successful!",
+        duration: 2000,
       });
-      router.push('/dashboard');
+      router.push("/dashboard");
     } catch (error) {
       toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Login failed',
-        variant: 'destructive'
+        title: "Error",
+        description: error instanceof Error ? error.message : "Login failed",
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -77,19 +77,18 @@ export default function LoginPage() {
             />
           </div>
 
-          <Button
-            type="submit"
-            disabled={loading}
-            className="w-full"
-          >
-            {loading ? 'Signing in...' : 'Sign In'}
+          <Button type="submit" disabled={loading} className="w-full">
+            {loading ? "Signing in..." : "Sign In"}
           </Button>
         </form>
 
         <div className="mt-6 text-center">
           <p className="text-sm text-muted-foreground">
-            Don't have an account?{' '}
-            <Link href="/auth/signup" className="text-primary font-medium hover:underline">
+            Don't have an account?{" "}
+            <Link
+              href="/auth/signup"
+              className="text-primary font-medium hover:underline"
+            >
               Sign up
             </Link>
           </p>

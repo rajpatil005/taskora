@@ -1,14 +1,14 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useAuth } from '@/lib/authContext';
-import { ProtectedRoute } from '@/components/ProtectedRoute';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Spinner } from '@/components/ui/spinner';
-import { useToast } from '@/hooks/use-toast';
-import Link from 'next/link';
-import { CheckCircle2, Clock, AlertCircle, Plus } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { useAuth } from "@/lib/authContext";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
+import { useToast } from "@/hooks/use-toast";
+import Link from "next/link";
+import { CheckCircle2, Clock, AlertCircle, Plus } from "lucide-react";
 
 interface Task {
   _id: string;
@@ -16,7 +16,7 @@ interface Task {
   description: string;
   rewardAmount: number;
   category: string;
-  status: 'open' | 'accepted' | 'completed' | 'cancelled';
+  status: "open" | "accepted" | "completed" | "cancelled";
   owner: {
     _id: string;
     name: string;
@@ -36,9 +36,9 @@ export default function MyTasksPage() {
   const [postedTasks, setPostedTasks] = useState<Task[]>([]);
   const [acceptedTasks, setAcceptedTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'posted' | 'accepted'>('posted');
+  const [activeTab, setActiveTab] = useState<"posted" | "accepted">("posted");
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
   useEffect(() => {
     const fetchTasks = async () => {
@@ -47,14 +47,20 @@ export default function MyTasksPage() {
       setLoading(true);
       try {
         // Fetch posted tasks
-        const postedRes = await fetch(`${API_URL}/api/tasks/user/list?role=owner`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
+        const postedRes = await fetch(
+          `${API_URL}/api/tasks/user/list?role=owner`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        );
 
         // Fetch accepted tasks
-        const acceptedRes = await fetch(`${API_URL}/api/tasks/user/list?role=worker`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
+        const acceptedRes = await fetch(
+          `${API_URL}/api/tasks/user/list?role=worker`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        );
 
         if (postedRes.ok) {
           const postedData = await postedRes.json();
@@ -67,9 +73,9 @@ export default function MyTasksPage() {
         }
       } catch (error) {
         toast({
-          title: 'Error',
-          description: 'Failed to load tasks',
-          variant: 'destructive'
+          title: "Error",
+          description: "Failed to load tasks",
+          variant: "destructive",
         });
       } finally {
         setLoading(false);
@@ -81,35 +87,52 @@ export default function MyTasksPage() {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'completed':
+      case "completed":
         return <CheckCircle2 className="w-4 h-4 text-green-500" />;
-      case 'accepted':
+      case "accepted":
         return <Clock className="w-4 h-4 text-blue-500" />;
-      case 'cancelled':
+      case "cancelled":
         return <AlertCircle className="w-4 h-4 text-red-500" />;
+      case "confirmed":
+        return <CheckCircle2 className="w-4 h-4 text-teal-500" />;
       default:
-        return <Clock className="w-4 h-4 text-yellow-500" />;
+        return <Clock className="w-4 h-4 text-yellow-500" />; // for "open"
     }
   };
 
-  const TaskList = ({ tasks, role }: { tasks: Task[]; role: 'posted' | 'accepted' }) => (
+  const TaskList = ({
+    tasks,
+    role,
+  }: {
+    tasks: Task[];
+    role: "posted" | "accepted";
+  }) => (
     <div className="space-y-4">
+      {/* Add Task Button always visible for posted tab */}
+      {role === "posted" && (
+        <div className="flex justify-end mb-4">
+          <Link href="/post-task">
+            <Button className="gap-2">
+              <Plus className="w-4 h-4" />
+              Post a Task
+            </Button>
+          </Link>
+        </div>
+      )}
+
       {tasks.length === 0 ? (
         <div className="text-center py-12">
           <p className="text-muted-foreground mb-4">
-            {role === 'posted' ? 'No tasks posted yet' : 'No accepted tasks'}
+            {role === "posted" ? "No tasks posted yet" : "No accepted tasks"}
           </p>
-          {role === 'posted' && (
-            <Link href="/post-task">
-              <Button className="gap-2">
-                <Plus className="w-4 h-4" />
-                Post a Task
-              </Button>
-            </Link>
+          {role === "accepted" && (
+            <p className="text-sm text-muted-foreground">
+              Accept tasks from the dashboard to see them here
+            </p>
           )}
         </div>
       ) : (
-        tasks.map(task => (
+        tasks.map((task) => (
           <Card key={task._id} className="p-6">
             <div className="flex items-start justify-between mb-4">
               <div className="flex-1">
@@ -118,25 +141,51 @@ export default function MyTasksPage() {
                     {task.title}
                   </h3>
                 </Link>
-                <p className="text-sm text-muted-foreground mt-1">{task.description}</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {task.description}
+                </p>
               </div>
               <div className="text-right ml-4">
-                <div className="text-2xl font-bold text-primary">₹{task.rewardAmount}</div>
-                <div className="text-xs text-muted-foreground mt-1 capitalize">{task.status}</div>
+                <div className="text-2xl font-bold text-primary">
+                  ₹{task.rewardAmount}
+                </div>
+                <div className="text-xs text-muted-foreground mt-1 capitalize">
+                  {task.status}
+                </div>
               </div>
             </div>
 
             <div className="flex items-center gap-4 text-sm mb-4 pb-4 border-b border-border">
               {getStatusIcon(task.status)}
               <span className="text-muted-foreground">{task.category}</span>
-              {role === 'posted' && task.acceptedBy && (
+              {role === "posted" &&
+                task.acceptedBy &&
+                task.status === "accepted" && (
+                  <span className="text-muted-foreground">
+                    Accepted by{" "}
+                    <span className="font-medium">{task.acceptedBy.name}</span>
+                  </span>
+                )}
+
+              {role === "posted" &&
+                task.acceptedBy &&
+                task.status === "completed" && (
+                  <span className="text-muted-foreground">
+                    Completed by{" "}
+                    <span className="font-medium">{task.acceptedBy.name}</span>
+                  </span>
+                )}
+
+              {role === "posted" && task.status === "confirmed" && (
                 <span className="text-muted-foreground">
-                  Accepted by <span className="font-medium">{task.acceptedBy.name}</span>
+                  Confirmed by{" "}
+                  <span className="font-medium">{task.owner.name}</span>
                 </span>
               )}
-              {role === 'accepted' && (
+              {role === "accepted" && (
                 <span className="text-muted-foreground">
-                  Posted by <span className="font-medium">{task.owner.name}</span>
+                  Posted by{" "}
+                  <span className="font-medium">{task.owner.name}</span>
                 </span>
               )}
             </div>
@@ -170,21 +219,21 @@ export default function MyTasksPage() {
           {/* Tabs */}
           <div className="flex gap-2 mb-8 border-b border-border">
             <button
-              onClick={() => setActiveTab('posted')}
+              onClick={() => setActiveTab("posted")}
               className={`px-4 py-2 font-medium border-b-2 transition ${
-                activeTab === 'posted'
-                  ? 'border-primary text-primary'
-                  : 'border-transparent text-muted-foreground hover:text-foreground'
+                activeTab === "posted"
+                  ? "border-primary text-primary"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
               }`}
             >
               Tasks I Posted ({postedTasks.length})
             </button>
             <button
-              onClick={() => setActiveTab('accepted')}
+              onClick={() => setActiveTab("accepted")}
               className={`px-4 py-2 font-medium border-b-2 transition ${
-                activeTab === 'accepted'
-                  ? 'border-primary text-primary'
-                  : 'border-transparent text-muted-foreground hover:text-foreground'
+                activeTab === "accepted"
+                  ? "border-primary text-primary"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
               }`}
             >
               Tasks I Accepted ({acceptedTasks.length})
@@ -198,8 +247,12 @@ export default function MyTasksPage() {
             </div>
           ) : (
             <div className="max-w-2xl mx-auto">
-              {activeTab === 'posted' && <TaskList tasks={postedTasks} role="posted" />}
-              {activeTab === 'accepted' && <TaskList tasks={acceptedTasks} role="accepted" />}
+              {activeTab === "posted" && (
+                <TaskList tasks={postedTasks} role="posted" />
+              )}
+              {activeTab === "accepted" && (
+                <TaskList tasks={acceptedTasks} role="accepted" />
+              )}
             </div>
           )}
         </div>

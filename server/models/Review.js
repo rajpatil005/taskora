@@ -1,34 +1,35 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const reviewSchema = new mongoose.Schema(
   {
     task: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Task',
-      required: true
+      ref: "Task",
+      required: true,
     },
     reviewer: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: true
+      ref: "User",
+      required: true,
     },
     reviewee: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: true
+      ref: "User",
+      required: true,
     },
     rating: {
       type: Number,
       required: true,
       min: 1,
-      max: 5
+      max: 5,
     },
     comment: {
       type: String,
-      maxlength: 500
-    }
+      maxlength: 500,
+    },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
+reviewSchema.index({ task: 1, reviewer: 1 }, { unique: true });
 
-export default mongoose.model('Review', reviewSchema);
+export default mongoose.model("Review", reviewSchema);
