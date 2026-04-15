@@ -1,0 +1,147 @@
+<!-- {/* Action Buttons */}
+
+{/* MARK COMPLETED */}
+{task.status === "accepted" && isTaskWorker && (
+  <div className="p-6 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md
+                  shadow-[0_0_20px_rgba(34,197,94,0.15)]">
+
+    <h3 className="font-semibold text-white mb-3 text-lg">
+      Mark Task as Completed
+    </h3>
+
+    <p className="text-sm text-white/60 mb-5 leading-relaxed">
+      Once you finish the task, mark it completed so the owner can review and release payment.
+    </p>
+
+    <Button
+      onClick={handleMarkCompleted}
+      disabled={actionLoading}
+      className="gap-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white
+                 hover:brightness-110 hover:shadow-[0_0_16px_rgba(34,197,94,0.35)]"
+    >
+      {actionLoading ? "Submitting..." : "Mark as Completed"}
+    </Button>
+  </div>
+)}
+
+
+{/* EDIT + DELETE */}
+{isTaskOwner && task.status === "open" && !editing && (
+  <div className="flex gap-4 mt-6">
+
+    <Button
+      variant="outline"
+      onClick={handleEditTask}
+      className="border-white/20 text-white/70 hover:bg-white/10"
+    >
+      Edit Task
+    </Button>
+
+    <Button
+      onClick={() => setShowDeleteConfirm(true)}
+      className="bg-red-500/10 text-red-400 border border-red-500/20
+                 hover:bg-red-500/20 hover:shadow-[0_0_12px_rgba(239,68,68,0.3)]"
+    >
+      Delete Task
+    </Button>
+
+  </div>
+)}
+
+
+{/* CONFIRM COMPLETION */}
+{task.status === "completed" && isTaskOwner && (
+  <div className="p-6 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md
+                  shadow-[0_0_20px_rgba(59,130,246,0.15)]">
+
+    <h3 className="font-semibold text-white mb-3 text-lg">
+      Confirm Task Completion
+    </h3>
+
+    <p className="text-sm text-white/60 mb-5 leading-relaxed">
+      The worker marked this task as completed. Confirm if the work is done.
+    </p>
+
+    <Button
+      onClick={handleConfirmCompletion}
+      disabled={actionLoading}
+      className="gap-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white
+                 hover:brightness-110 hover:shadow-[0_0_16px_rgba(59,130,246,0.35)]"
+    >
+      {actionLoading ? "Confirming..." : "Confirm Completion"}
+    </Button>
+  </div>
+)}
+
+
+{/* REVIEW FORM */}
+{task.status === "confirmed" &&
+  (isTaskOwner || isTaskWorker) &&
+  !alreadyReviewed && (
+
+  <div className="p-6 mt-6 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md">
+
+    <h3 className="font-semibold text-white mb-4 text-lg">
+      Leave a Review
+    </h3>
+
+    <div className="space-y-4">
+
+      {/* Rating */}
+      <div>
+        <label className="text-sm text-white/60">Rating</label>
+        <select
+          className="w-full mt-1 px-3 py-2 rounded-lg bg-white/5 border border-white/10
+                     text-white focus:outline-none focus:ring-2 focus:ring-purple-500/30"
+          value={rating}
+          onChange={(e) => setRating(Number(e.target.value))}
+        >
+          <option value={5}>5 ⭐</option>
+          <option value={4}>4 ⭐</option>
+          <option value={3}>3 ⭐</option>
+          <option value={2}>2 ⭐</option>
+          <option value={1}>1 ⭐</option>
+        </select>
+      </div>
+
+      {/* Comment */}
+      <div>
+        <label className="text-sm text-white/60">Comment</label>
+        <textarea
+          className="w-full mt-1 px-3 py-2 rounded-lg bg-white/5 border border-white/10
+                     text-white placeholder:text-white/40
+                     focus:outline-none focus:ring-2 focus:ring-purple-500/30"
+          placeholder="Write your experience..."
+          value={comment}
+          onChange={(e) => setComment(e.target.value)}
+        />
+      </div>
+
+      <Button
+        onClick={handleSubmitReview}
+        disabled={reviewSubmitting}
+        className="bg-gradient-to-r from-purple-600 to-blue-600 text-white
+                   hover:brightness-110 hover:shadow-[0_0_16px_rgba(139,92,246,0.3)]"
+      >
+        {reviewSubmitting ? "Submitting..." : "Submit Review"}
+      </Button>
+
+    </div>
+  </div>
+)}
+
+
+{/* REVIEW SUBMITTED */}
+{task.status === "confirmed" && alreadyReviewed && (
+  <div className="p-6 mt-6 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md
+                  shadow-[0_0_20px_rgba(34,197,94,0.15)]">
+
+    <h3 className="font-semibold text-green-400 text-lg">
+      Review Submitted
+    </h3>
+
+    <p className="text-sm text-white/60 mt-2">
+      Thank you for your feedback.
+    </p>
+  </div>
+)} -->
