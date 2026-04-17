@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Header from "@/components/Header";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import ChatWindow from "@/components/ChatWindow";
 import { useParams } from "next/navigation";
@@ -91,6 +92,8 @@ export default function TaskDetailPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [showChat, setShowChat] = useState(false);
 
+  const [isMobile, setIsMobile] = useState(false);
+
   // Review state
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
@@ -107,6 +110,13 @@ export default function TaskDetailPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   const handleAcceptTask = async () => {
     if (!token || !_id) return;
@@ -490,32 +500,11 @@ export default function TaskDetailPage() {
       )}
       <main className="min-h-screen bg-transparent text-white">
         {/* HEADER */}
-        <header className="border-b border-white/10 bg-transparent/90 backdrop-blur-xl sticky top-0 z-40">
-          <div className="container mx-auto px-4 py-6 flex items-center gap-20">
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-2"
-              onClick={() => {
-                if (window.history.length > 2) {
-                  router.back();
-                } else {
-                  router.push("/dashboard");
-                }
-              }}
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back
-            </Button>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent">
-              Task Details
-            </h1>{" "}
-          </div>
-        </header>
+        <Header title="Task Details" />
 
         <div className="container mx-auto px-4 py-6 min-h-0">
           <div
-            className={`flex gap-5 items-stretch min-h-0 w-full overflow-x-hidden h-[calc(100dvh-8.5rem)] max-h-[calc(100dvh-8.5rem)] ${
+            className={`flex gap-5 items-stretch min-h-0 w-full overflow-x-hidden ${isMobile ? "" : "h-[calc(100dvh-8.5rem)] max-h-[calc(100dvh-8.5rem)]"}] ${
               showChat ? "" : "justify-center"
             }`}
           >
@@ -526,11 +515,19 @@ export default function TaskDetailPage() {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               className={`flex min-h-0 min-w-0 flex-col ${
-                showChat ? "flex-[1.22] basis-0" : "w-full max-w-3xl shrink-0"
+                showChat && !isMobile
+                  ? "flex-[1.22] basis-0"
+                  : "w-full max-w-3xl shrink-0"
               }`}
             >
               <Card className="Card flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] shadow-[0_20px_60px_rgba(0,0,0,0.35)] backdrop-blur-md">
-                <div className="flex-1 overflow-y-auto pr-2 scrollbar-stable">
+                <div
+                  className={`flex-1 pr-2 ${
+                    isMobile
+                      ? "overflow-visible"
+                      : "overflow-y-auto scrollbar-stable"
+                  }`}
+                >
                   {" "}
                   {/* Header */}
                   <div className="mb-8 pb-8 border-b border-white/10 text-white">
@@ -800,8 +797,11 @@ export default function TaskDetailPage() {
                         variant="outline"
                         className="w-full flex items-center justify-center gap-2 border-white/20 text-white hover:bg-white/10"
                         onClick={() => {
-                          if (!showChat) setShowChat(true);
-                          else setShowChat(false);
+                          if (isMobile) {
+                            router.push(`/chat/${task._id}`);
+                          } else {
+                            setShowChat((prev) => !prev);
+                          }
                         }}
                       >
                         <MessageSquare className="w-4 h-4" />
@@ -937,7 +937,7 @@ export default function TaskDetailPage() {
               </Card>
             </motion.div>
             <AnimatePresence mode="sync" initial={false}>
-              {showChat && (
+              {showChat && !isMobile && (
                 <motion.div
                   key="task-chat"
                   variants={chatPanelVariants}

@@ -736,7 +736,7 @@ export default function HomePage() {
       </motion.section>
       <footer
         className="
-    absolute bottom-0 left-0 w-full z-20
+    absolute md:bottom-0 sm:bottom-5 left-0 w-full z-20
     border-t border-white/10
     text-gray-400
 
@@ -833,24 +833,16 @@ export default function HomePage() {
                   Safety
                 </Link>
               </li>
+              <li>
+                <a
+                  href="https://www.linkedin.com/in/raj-patil-cse/"
+                  target="_blank"
+                  className="hover:text-white transition"
+                >
+                  <Linkedin className="w-4 h-4" />
+                </a>
+              </li>
             </ul>
-
-            <div className="flex gap-4 mt-3">
-              <a
-                href="https://www.linkedin.com/in/raj-patil-cse/"
-                target="_blank"
-                className="hover:text-white transition"
-              >
-                <Linkedin className="w-4 h-4" />
-              </a>
-              <a
-                href="#"
-                target="_blank"
-                className="hover:text-white transition"
-              >
-                <Twitter className="w-4 h-4" />
-              </a>
-            </div>
           </div>
         </div>
         {/* BOTTOM STRIP */}

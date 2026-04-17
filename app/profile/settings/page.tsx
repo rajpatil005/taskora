@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
+import Header from "@/components/Header";
 import { useAuth } from "@/lib/authContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Card } from "@/components/ui/card";
@@ -147,22 +148,7 @@ export default function ProfileSettingsPage() {
     <ProtectedRoute>
       <main className="min-h-screen bg-transparent text-white">
         {/* HEADER */}
-        <header className="border-b border-white/10 bg-transparent/90 backdrop-blur-xl sticky top-0 z-40">
-          <div className="container mx-auto px-4 py-6 flex items-center gap-4">
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-2"
-              onClick={() => router.back()}
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back
-            </Button>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent">
-              Profile Settings
-            </h1>{" "}
-          </div>
-        </header>
+        <Header title="Profile Settings" />
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}

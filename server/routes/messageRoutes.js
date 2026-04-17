@@ -4,6 +4,7 @@ import {
   getConversations,
   sendMessage,
   markAsRead,
+  getUnreadCount,
 } from "../controllers/messageController.js";
 import { protectRoute } from "../middleware/auth.js";
 
@@ -15,5 +16,6 @@ router.get("/conversations", getConversations);
 router.get("/task/:taskId", getTaskMessages);
 router.post("/", sendMessage);
 router.put("/read/:taskId", markAsRead);
+router.get("/unread-count", getUnreadCount);
 
 export default router;

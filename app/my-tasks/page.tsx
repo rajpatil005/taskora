@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import Header from "@/components/Header";
 import { useAuth } from "@/lib/authContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Card } from "@/components/ui/card";
@@ -229,19 +230,8 @@ export default function MyTasksPage() {
   return (
     <ProtectedRoute>
       <main className="min-h-screen bg-transparent text-white relative z-10">
-        {" "}
-        <header className="border-b border-white/10 bg-transparent/90 backdrop-blur-xl sticky top-0 z-40">
-          <div className="container mx-auto px-4 py-6 flex items-center gap-20">
-            <Link href="/dashboard">
-              <Button variant="outline" size="sm" className="gap-2">
-                <ArrowLeft className="w-4 h-4" />
-                Back
-              </Button>
-            </Link>
-
-            <h1 className="text-3xl font-bold text-white">My Tasks</h1>
-          </div>
-        </header>
+        {/* ✅ HEADER */}
+        <Header title="My Tasks" />
         <motion.div
           className="max-w-[1400px] mx-auto px-4 py-8 relative z-10"
           initial="hidden"
@@ -267,19 +257,6 @@ export default function MyTasksPage() {
                 Tasks I Accepted ({acceptedTasks.length})
               </button>
             </div>
-
-            {/* RIGHT SIDE BUTTON */}
-            {activeTab === "posted" && (
-              <Link href="/post-task">
-                <motion.div whileTap={{ scale: 0.95 }}>
-                  <Button variant="primary" className="gap-2 btn-glow">
-                    {" "}
-                    <Plus className="w-4 h-4" />
-                    Post a Task
-                  </Button>
-                </motion.div>
-              </Link>
-            )}
           </div>
           {/* CONTENT */}
           {loading ? (

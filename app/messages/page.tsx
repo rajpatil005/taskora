@@ -75,7 +75,9 @@ export default function MessagesPage() {
   }, [token, user]);
 
   const getOtherUser = (conv: Conversation) => {
-    if (conv.sender._id === user?._id) return conv.receiver;
+    if (String(conv.sender._id) === String(user?._id)) {
+      return conv.receiver;
+    }
     return conv.sender;
   };
 

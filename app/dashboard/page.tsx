@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
+import { MapPin } from "lucide-react";
 import { containerVariants, itemVariants } from "@/lib/animations";
 
 interface Task {
@@ -19,6 +20,7 @@ interface Task {
   rewardAmount: number;
   category: string;
   status: string;
+  distance?: number;
   owner: {
     _id: string;
     name: string;
@@ -26,12 +28,15 @@ interface Task {
 }
 
 const categories = [
-  "All",
-  "Cleaning",
-  "Shopping",
-  "Delivery",
-  "Repair",
-  "Other",
+  { label: "All", value: "all" },
+  { label: "Cleaning", value: "cleaning" },
+  { label: "Shopping", value: "shopping" },
+  { label: "Delivery", value: "delivery" },
+  { label: "Moving", value: "moving" },
+  { label: "Repair", value: "repair" },
+  { label: "Photography", value: "photography" },
+  { label: "Tutoring", value: "tutoring" },
+  { label: "Other", value: "other" },
 ];
 
 export default function DashboardPage() {
@@ -41,16 +46,24 @@ export default function DashboardPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [nearbyTasks, setNearbyTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
+  const [radius, setRadius] = useState(10); // default 10km
 
-  const [location, setLocation] = useState<{ lat: number; lng: number } | null>(
-    null,
-  );
-  const [locationEnabled, setLocationEnabled] = useState(false);
   const [locationLoading, setLocationLoading] = useState(false);
+  const [location, setLocation] = useState<{ lat: number; lng: number } | null>(
+    () => {
+      if (typeof window === "undefined") return null;
+      const saved = localStorage.getItem("location");
+      return saved ? JSON.parse(saved) : null;
+    },
+  );
+
+  const [locationEnabled, setLocationEnabled] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem("locationEnabled") === "true";
+  });
 
   const [search, setSearch] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("All");
-
+  const [selectedCategory, setSelectedCategory] = useState("all");
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
   // 📍 LOCATION FETCH
@@ -58,6 +71,11 @@ export default function DashboardPage() {
     if (locationEnabled) {
       setLocationEnabled(false);
       setLocation(null);
+
+      // CLEAR STORAGE
+      localStorage.removeItem("location");
+      localStorage.removeItem("locationEnabled");
+
       return;
     }
 
@@ -67,12 +85,19 @@ export default function DashboardPage() {
 
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        setLocation({
+        const posLocation = {
           lat: pos.coords.latitude,
           lng: pos.coords.longitude,
-        });
+        };
+
+        setLocation(posLocation);
         setLocationEnabled(true);
-        setLocationLoading(false); // ✅ STOP LOADING
+
+        // SAVE TO LOCALSTORAGE
+        localStorage.setItem("location", JSON.stringify(posLocation));
+        localStorage.setItem("locationEnabled", "true");
+
+        setLocationLoading(false);
       },
       () => {
         toast({
@@ -90,30 +115,28 @@ export default function DashboardPage() {
     const fetchTasks = async () => {
       if (!token) return;
 
+      // ❌ If location OFF → show nothing
+      if (!locationEnabled || !location) {
+        setTasks([]);
+        setNearbyTasks([]);
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
 
       try {
-        let url = `${API_URL}/api/tasks/user/list`;
+        const params = new URLSearchParams();
 
-        // ✅ If filters applied → use nearby API
-        if (search || selectedCategory !== "All" || locationEnabled) {
-          const params = new URLSearchParams();
+        params.append("latitude", location.lat.toString());
+        params.append("longitude", location.lng.toString());
+        params.append("radius", radius.toString());
 
-          if (locationEnabled && location) {
-            params.append("latitude", location.lat.toString()); // ✅ FIX
-            params.append("longitude", location.lng.toString()); // ✅ FIX
-          } else {
-            // fallback location (important)
-            params.append("latitude", "0");
-            params.append("longitude", "0");
-          }
-
-          if (selectedCategory !== "All") {
-            params.append("category", selectedCategory.toLowerCase()); // ✅ FIX
-          }
-
-          url = `${API_URL}/api/tasks/nearby?${params.toString()}`;
+        if (selectedCategory !== "all") {
+          params.append("category", selectedCategory);
         }
+
+        const url = `${API_URL}/api/tasks/nearby?${params.toString()}`;
 
         const res = await fetch(url, {
           headers: { Authorization: `Bearer ${token}` },
@@ -125,7 +148,7 @@ export default function DashboardPage() {
 
         let fetchedTasks = data.tasks;
 
-        // ✅ CLIENT SIDE SEARCH FILTER (since backend doesn't support search)
+        // search filter
         if (search) {
           fetchedTasks = fetchedTasks.filter(
             (task: Task) =>
@@ -135,6 +158,7 @@ export default function DashboardPage() {
         }
 
         setTasks(fetchedTasks);
+        setNearbyTasks(fetchedTasks.slice(0, 6));
       } catch {
         toast({
           title: "Error",
@@ -147,30 +171,15 @@ export default function DashboardPage() {
     };
 
     fetchTasks();
-  }, [token, search, selectedCategory, locationEnabled, location]);
-
-  // 📍 FETCH NEARBY (SEPARATE)
-  useEffect(() => {
-    const fetchNearbyTasks = async () => {
-      if (!token || !locationEnabled || !location) return;
-
-      try {
-        const res = await fetch(
-          `${API_URL}/api/tasks/nearby?lat=${location.lat}&lng=${location.lng}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          },
-        );
-
-        if (!res.ok) return;
-
-        const data = await res.json();
-        setNearbyTasks(data.tasks);
-      } catch {}
-    };
-
-    fetchNearbyTasks();
-  }, [locationEnabled, location, token]);
+  }, [
+    token,
+    search,
+    selectedCategory,
+    locationEnabled,
+    location?.lat,
+    location?.lng,
+    radius,
+  ]);
 
   const totalTasks = tasks.length;
   const completedTasks = tasks.filter((t) => t.status === "completed").length;
@@ -195,47 +204,6 @@ export default function DashboardPage() {
                     Manage and track your tasks
                   </p>
                 </div>
-
-                <div className="flex items-center gap-2">
-                  <Link href="/wallet">
-                    <motion.div whileTap={{ scale: 0.95 }}>
-                      <Button
-                        variant="ghost"
-                        className="px-4 hover:bg-white/10"
-                      >
-                        💰 Wallet
-                      </Button>
-                    </motion.div>
-                  </Link>
-
-                  {/* Divider */}
-                  <div className="w-px h-5 bg-white/30" />
-
-                  <Link href="/my-tasks">
-                    <motion.div whileTap={{ scale: 0.95 }}>
-                      <Button
-                        variant="ghost"
-                        className="px-4 hover:bg-white/10"
-                      >
-                        My Tasks
-                      </Button>
-                    </motion.div>
-                  </Link>
-
-                  {/* Divider */}
-                  <div className="w-px h-5 bg-white/30" />
-
-                  <Link href="/post-task">
-                    <motion.div whileTap={{ scale: 0.95 }}>
-                      <Button
-                        variant="ghost"
-                        className="px-4 hover:bg-white/10"
-                      >
-                        Post Task
-                      </Button>
-                    </motion.div>
-                  </Link>
-                </div>
               </div>
 
               {/* 🔍 SEARCH + LOCATION */}
@@ -249,7 +217,7 @@ export default function DashboardPage() {
 
                 <Button
                   onClick={handleLocationToggle}
-                  variant={locationEnabled ? "default" : "outline"}
+                  variant={locationEnabled && location ? "default" : "outline"}
                   className="h-11 px-5 flex items-center justify-center gap-2"
                   disabled={locationLoading}
                 >
@@ -266,41 +234,39 @@ export default function DashboardPage() {
                 </Button>
               </div>
 
-              {/* 🧩 CATEGORY FILTERS */}
-              <div className="flex gap-2 overflow-x-auto pb-2 mb-8">
-                {categories.map((cat) => (
+              <div className="flex gap-2 overflow-x-auto pb-2 mb-6">
+                {[5, 10, 25, 50, 100].map((r) => (
                   <button
-                    key={cat}
-                    onClick={() => setSelectedCategory(cat)}
+                    key={r}
+                    onClick={() => setRadius(r)}
                     className={`px-4 py-1.5 rounded-full text-sm whitespace-nowrap border transition ${
-                      selectedCategory === cat
+                      radius === r
                         ? "bg-purple-600 border-purple-600 text-white"
                         : "border-white/10 text-white/70 hover:bg-white/10"
                     }`}
                   >
-                    {cat}
+                    {r} km
                   </button>
                 ))}
               </div>
 
-              {/* 📍 NEARBY */}
-              {nearbyTasks.length > 0 && (
-                <div className="mb-10">
-                  <h2 className="text-lg font-semibold mb-4">Nearby Tasks</h2>
-
-                  <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                    {nearbyTasks.map((task) => (
-                      <Card className="p-4 bg-white/5 border border-white/10 backdrop-blur-xl">
-                        {" "}
-                        <h3 className="text-sm font-medium">{task.title}</h3>
-                        <p className="text-xs text-gray-400 mt-2 line-clamp-2">
-                          {task.description}
-                        </p>
-                      </Card>
-                    ))}
-                  </div>
-                </div>
-              )}
+              {/* 🧩 CATEGORY FILTERS */}
+              <div className="flex flex-wrap gap-2 pb-2 mb-8">
+                {" "}
+                {categories.map((cat) => (
+                  <button
+                    key={cat.value}
+                    onClick={() => setSelectedCategory(cat.value)}
+                    className={`px-4 py-1.5 rounded-full text-sm whitespace-nowrap border transition ${
+                      selectedCategory === cat.value
+                        ? "bg-purple-600 border-purple-600 text-white"
+                        : "border-white/10 text-white/70 hover:bg-white/10"
+                    }`}
+                  >
+                    {cat.label}
+                  </button>
+                ))}
+              </div>
 
               {/* 📊 SUMMARY */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl mb-10">
@@ -328,9 +294,47 @@ export default function DashboardPage() {
                 <div className="flex justify-center py-20">
                   <Spinner />
                 </div>
+              ) : !locationEnabled || !location ? (
+                // 📍 LOCATION DISABLED EMPTY STATE
+                <motion.div
+                  className="col-span-full flex flex-col items-center justify-center py-24 text-center"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                >
+                  <div className="mb-4 opacity-60">
+                    <MapPin className="w-10 h-10" />
+                  </div>
+
+                  <p className="text-lg font-semibold text-white/80 mb-2">
+                    Location is disabled
+                  </p>
+
+                  <p className="text-sm text-white/50 max-w-md">
+                    Enable your location to discover nearby tasks and start
+                    earning.
+                  </p>
+                </motion.div>
+              ) : tasks.length === 0 ? (
+                // 📦 NO TASKS EMPTY STATE
+                <motion.div
+                  className="col-span-full flex flex-col items-center justify-center py-24 text-center"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                >
+                  <div className="mb-4 opacity-60">
+                    <MapPin className="w-10 h-10" />
+                  </div>
+
+                  <p className="text-lg font-semibold text-white/80 mb-2">
+                    No tasks found
+                  </p>
+
+                  <p className="text-sm text-white/50 max-w-md">
+                    Try increasing your radius or changing category.
+                  </p>
+                </motion.div>
               ) : (
                 <motion.div className="relative z-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                  {" "}
                   {tasks.map((task) => (
                     <motion.div
                       key={task._id}
@@ -358,7 +362,12 @@ export default function DashboardPage() {
                           {/* Minimal Info */}
                           <div className="flex items-center justify-between mt-3 text-xs text-white/50">
                             <span>{task.category}</span>
-                            <span>{task.owner.name}</span>
+
+                            {task.distance !== undefined ? (
+                              <span>{task.distance.toFixed(1)} km</span>
+                            ) : (
+                              <span>{task.owner.name}</span>
+                            )}
                           </div>
                         </div>
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Header from "@/components/Header";
 import { useAuth } from "@/lib/authContext";
 import { motion } from "framer-motion";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
@@ -123,22 +124,7 @@ export default function WalletPage() {
           <div className="absolute top-[-100px] left-[20%] w-[500px] h-[500px] bg-purple-600/20 blur-[120px] rounded-full" />
           <div className="absolute bottom-[-100px] right-[20%] w-[500px] h-[500px] bg-blue-600/20 blur-[120px] rounded-full" />
         </div>{" "}
-        <header className="border-b border-white/10 container mx-auto px-4 py-6 flex items-center gap-4">
-          <Link href="/my-tasks">
-            <Button
-              onClick={() => router.back()}
-              variant="outline"
-              size="sm"
-              className="gap-2"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back
-            </Button>
-          </Link>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent">
-            Wallet
-          </h1>{" "}
-        </header>
+        <Header title="Wallet" />
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}

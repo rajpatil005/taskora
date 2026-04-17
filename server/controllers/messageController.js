@@ -1,15 +1,29 @@
 import Message from "../models/Message.js";
 import Task from "../models/Task.js";
+import mongoose from "mongoose";
 
 export const getTaskMessages = async (req, res) => {
   try {
     const { taskId } = req.params;
+
+    // ✅ FIX 1: validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(taskId)) {
+      return res.status(400).json({ message: "Invalid taskId" });
+    }
+
     const limit = parseInt(req.query.limit) || 50;
     const page = parseInt(req.query.page) || 1;
 
     const messages = await Message.find({ task: taskId })
       .populate("sender", "name profilePhoto")
       .populate("receiver", "name profilePhoto")
+      .populate({
+        path: "replyTo",
+        populate: {
+          path: "sender",
+          select: "name",
+        },
+      })
       .sort({ createdAt: -1 })
       .limit(limit)
       .skip((page - 1) * limit);
@@ -25,14 +39,27 @@ export const getTaskMessages = async (req, res) => {
       },
     });
   } catch (error) {
+    console.error("❌ getTaskMessages ERROR:", error); // ✅ ADD THIS
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const getUnreadCount = async (req, res) => {
+  try {
+    const count = await Message.countDocuments({
+      receiver: req.user._id,
+      read: false,
+    });
+
+    res.json({ count });
+  } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
 export const sendMessage = async (req, res) => {
   try {
-    const { task, text } = req.body;
-
+    const { task, text, replyTo } = req.body;
     if (!text) {
       return res.status(400).json({ message: "Message text required" });
     }
@@ -62,14 +89,34 @@ export const sendMessage = async (req, res) => {
       sender: req.user._id,
       receiver,
       text,
+      replyTo: replyTo || null, // ✅ ADD THIS
+    });
+
+    const io = req.app.get("io"); // ✅ ONLY ONCE
+
+    // ✅ MESSAGE → send ONLY socket event (no DB notification)
+    io.to(receiver.toString()).emit("messageNotification", {
+      type: "message",
+      message: text,
+      actor: {
+        _id: req.user._id,
+        name: req.user.name,
+        profilePhoto: req.user.profilePhoto,
+      },
+      taskId: task,
     });
 
     const populated = await Message.findById(message._id)
       .populate("sender", "name profilePhoto")
-      .populate("receiver", "name profilePhoto");
-    const io = req.app.get("io");
-
-    // emit to task room
+      .populate("receiver", "name profilePhoto")
+      .populate({
+        path: "replyTo",
+        populate: {
+          path: "sender",
+          select: "name",
+        },
+      });
+    // chat room update
     io.to(task.toString()).emit("newMessage", populated);
 
     res.status(201).json(populated);

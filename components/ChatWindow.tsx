@@ -16,7 +16,6 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
-import { io } from "socket.io-client";
 
 interface Message {
   _id: string;
@@ -32,10 +31,17 @@ interface Message {
     name: string;
     profilePhoto?: string;
   };
+  replyTo?: {
+    _id: string;
+    text: string;
+    sender: {
+      name: string;
+    };
+  };
 }
 
 export default function ChatWindow({ taskId }: { taskId: string }) {
-  const { user, token } = useAuth();
+  const { user, token, setUnreadMessages, socket } = useAuth();
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [text, setText] = useState("");
@@ -48,20 +54,24 @@ export default function ChatWindow({ taskId }: { taskId: string }) {
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
 
-  const socketRef = useRef<any>(null);
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
   const chatUser = (() => {
-    const msg = messages.find(
-      (m) => m.sender._id !== user?._id || m.receiver._id !== user?._id,
-    );
+    if (!user || messages.length === 0) return null;
 
+    const msg = messages[0];
     if (!msg) return null;
 
-    return msg.sender._id !== user?._id ? msg.sender : msg.receiver;
+    return msg.sender._id === user._id ? msg.receiver : msg.sender;
   })();
+
+  useEffect(() => {
+    const handleClick = () => setMenuMsg(null);
+    window.addEventListener("click", handleClick);
+    return () => window.removeEventListener("click", handleClick);
+  }, []);
 
   const normalize = (id: any) => {
     if (!id) return "";
@@ -72,6 +82,58 @@ export default function ChatWindow({ taskId }: { taskId: string }) {
   const scrollBottom = () => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   };
+  useEffect(() => {
+    if (!socket || !taskId) return;
+
+    socket.emit("joinTask", taskId);
+
+    const handleNewMessage = (msg: Message) => {
+      setMessages((prev) => {
+        if (prev.some((m) => m._id === msg._id)) return prev;
+
+        const updated = [...prev, msg];
+
+        return updated.sort(
+          (a, b) =>
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+        );
+      });
+    };
+
+    socket.on("newMessage", handleNewMessage);
+
+    return () => {
+      socket.emit("leaveTask", taskId); // ✅ ADD THIS
+      socket.off("newMessage", handleNewMessage);
+    };
+  }, [socket, taskId]);
+
+  useEffect(() => {
+    if (!taskId || !token) return;
+
+    fetch(`${API_URL}/api/messages/read/${taskId}`, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    }).then(async () => {
+      // ✅ re-fetch correct count from backend
+      const res = await fetch(`${API_URL}/api/messages/unread-count`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      const data = await res.json();
+      setUnreadMessages(data.count);
+    });
+  }, [taskId]);
+
+  useEffect(() => {
+    if (token) fetchMessages();
+  }, [taskId, token]);
 
   const fetchMessages = async () => {
     if (!token) return;
@@ -80,6 +142,7 @@ export default function ChatWindow({ taskId }: { taskId: string }) {
       const res = await fetch(`${API_URL}/api/messages/task/${taskId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
       });
 
@@ -91,27 +154,8 @@ export default function ChatWindow({ taskId }: { taskId: string }) {
   };
 
   useEffect(() => {
-    if (!taskId || !token) return;
-
-    fetchMessages();
-
-    socketRef.current = io(API_URL, {
-      auth: { token },
-    });
-
-    socketRef.current.emit("joinTask", taskId);
-
-    socketRef.current.on("newMessage", (msg: Message) => {
-      setMessages((prev) => {
-        if (prev.some((m) => m._id === msg._id)) return prev;
-        return [...prev, msg];
-      });
-    });
-
-    return () => socketRef.current.disconnect();
-  }, [taskId, token]);
-
-  useEffect(() => scrollBottom(), [messages]);
+    setTimeout(scrollBottom, 100);
+  }, [messages]);
 
   const sendMessage = async () => {
     if (!text.trim() || sending) return;
@@ -147,7 +191,10 @@ export default function ChatWindow({ taskId }: { taskId: string }) {
   const deleteMessage = async (id: string, type: "me" | "all") => {
     await fetch(`${API_URL}/api/messages/${id}`, {
       method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify({ type }),
     });
 
@@ -233,7 +280,7 @@ export default function ChatWindow({ taskId }: { taskId: string }) {
           </div>
         </header>
         {/* MESSAGES */}
-        <div className="flex-1 min-h-0 overflow-y-auto px-6 pt-2 mt-2 pb-2 space-y-4 chat-scroll">
+        <div className="flex-1 min-h-0 overflow-y-auto px-6 pt-2 mt-2 pb-2 space-y-4 no-scrollbar">
           {" "}
           {messages.map((msg) => {
             const currentUserId =
@@ -262,10 +309,21 @@ export default function ChatWindow({ taskId }: { taskId: string }) {
                     className={`chat-bubble ${
                       isMine ? "mine" : "other"
                     } ${isMine ? "reply-right" : "reply-left"}`}
-                    onClick={() => setMenuMsg(msg._id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setMenuMsg(msg._id);
+                    }}
                   >
-                    <p className="text-lg leading-relaxed">{msg.text}</p>
+                    {msg.replyTo && (
+                      <div className="mb-2 text-xs bg-white/10 px-2 py-1 rounded">
+                        <span className="opacity-70">
+                          {msg.replyTo.sender?.name}
+                        </span>
+                        <p className="truncate">{msg.replyTo.text}</p>
+                      </div>
+                    )}
 
+                    <p className="text-lg leading-relaxed">{msg.text}</p>
                     <p className="chat-time">{formatTime(msg.createdAt)}</p>
                   </div>
                   {/* MESSAGE MENU */}

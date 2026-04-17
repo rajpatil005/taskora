@@ -9,9 +9,10 @@ export default function ChatPage() {
 
   return (
     <ProtectedRoute>
-      <main className="min-h-screen text-white p-7 flex flex-col bg-transparent">
+      <div className="fixed inset-0 overflow-hidden py-20 px-3 bg-transparent text-white flex flex-col">
+        {" "}
         <ChatWindow taskId={taskId as string} />
-      </main>
+      </div>
     </ProtectedRoute>
   );
 }

@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/authContext";
+import { getSocket } from "@/lib/socket";
 import { usePathname } from "next/navigation";
 import { getAvatarUrl } from "@/lib/avatar";
 import {
@@ -19,7 +21,8 @@ import {
 } from "lucide-react";
 
 export function Navbar() {
-  const { user } = useAuth();
+  const { user, unreadNotifications, unreadMessages, setUnreadMessages } =
+    useAuth();
   const pathname = usePathname();
   const profileActive = pathname.startsWith("/profile");
 
@@ -35,6 +38,9 @@ export function Navbar() {
         ? "nav-active"
         : "text-gray-300 hover:text-white hover:bg-white/10"
     }`;
+  useEffect(() => {
+    if (!user) return;
+  }, [user]);
 
   return (
     <>
@@ -49,21 +55,21 @@ export function Navbar() {
           >
             {/* T LETTER */}
             <span
-              className={`flex items-center justify-center rounded-md font-bold text-md transition-all duration-300
+              className={`flex items-center justify-center rounded-md font-bold text-md transition-all duration-300 w-7 h-7
 
-    ${
-      pathname === "/"
-        ? "w-7 h-7 bg-gradient-to-br from-purple-600 to-blue-600 text-black shadow-[0_0_20px_rgba(139,92,246,0.5)]"
-        : "w-9 h-9 bg-gradient-to-r from-purple-500 to-blue-500 bg-clip-text text-transparent"
-    }`}
+${
+  pathname === "/"
+    ? "bg-gradient-to-br from-purple-600 to-blue-600 text-black shadow-[0_0_20px_rgba(139,92,246,0.5)] scale-105"
+    : "bg-gradient-to-r from-purple-500 to-blue-500 bg-clip-text text-transparent scale-130"
+}`}
             >
               T
             </span>
 
             {/* TEXT */}
             <span
-              className={`text-white tracking-wide transition-all duration-300
-    ${pathname === "/" ? "ml-3" : "ml-0"}
+              className={`text-white tracking-wide transition-all duration-300 translate-y-[1px]
+    ${pathname === "/" ? "ml-1" : "ml-[-8.5]"}
   `}
             >
               askora
@@ -79,14 +85,9 @@ export function Navbar() {
               }`}
             >
               <Bell size={25} />
-              <span className="absolute top-[6px] right-[6px] w-2.5 h-2.5 bg-red-500 rounded-full border border-black" />{" "}
-            </Link>
-
-            <Link
-              href="/messages"
-              className={`nav-icon ${isMessages ? "nav-icon-active" : ""}`}
-            >
-              <MessageCircle size={25} />
+              {user && unreadNotifications > 0 && (
+                <span className="absolute top-[6px] right-[6px] w-2.5 h-2.5 bg-red-500 rounded-full border border-black" />
+              )}
             </Link>
           </div>
         </div>
@@ -116,8 +117,10 @@ export function Navbar() {
                     </NavigationMenuItem>
 
                     <NavigationMenuItem>
-                      <Link href="/tasks">
-                        <span className={navLinkClass("/tasks")}>Tasks</span>
+                      <Link href="/my-tasks">
+                        <span className={navLinkClass("/my-tasks")}>
+                          My Tasks
+                        </span>
                       </Link>
                     </NavigationMenuItem>
 
@@ -141,12 +144,14 @@ export function Navbar() {
                 <Link href="/notifications">
                   <div className="relative px-3 py-2 text-gray-300 hover:text-white hover:bg-white/10 rounded-lg transition">
                     <Bell size={20} />
-                    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border border-black" />{" "}
+                    {unreadNotifications > 0 && (
+                      <span className="absolute top-[6px] right-[6px] w-2.5 h-2.5 bg-red-500 rounded-full border border-black" />
+                    )}{" "}
                   </div>
                 </Link>
 
                 {/* Post Task CTA */}
-                <Link href="/create-task">
+                <Link href="/post-task">
                   <button className="px-4 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-blue-600 text-white text-sm font-medium shadow-lg hover:scale-105 transition">
                     + Post Task
                   </button>
@@ -185,10 +190,10 @@ export function Navbar() {
           </Link>
 
           <Link
-            href="/tasks"
-            className={`nav-icon ${isTasks ? "nav-icon-active" : ""}`}
+            href="/my-tasks"
+            className={`nav-icon ${isActivity ? "nav-icon-active" : ""}`}
           >
-            <ClipboardList size={30} />
+            <ListChecks size={30} />
           </Link>
 
           {/* POST TASK */}
@@ -216,10 +221,14 @@ export function Navbar() {
           </Link>
 
           <Link
-            href="/my-tasks"
-            className={`nav-icon ${isActivity ? "nav-icon-active" : ""}`}
+            href="/messages"
+            className={`nav-icon relative ${isMessages ? "nav-icon-active" : ""}`}
           >
-            <ListChecks size={30} />
+            <MessageCircle size={25} />
+
+            {unreadMessages > 0 && (
+              <span className="absolute top-[6px] right-[6px] w-2.5 h-2.5 bg-red-500 rounded-full border border-black" />
+            )}
           </Link>
 
           {user && (

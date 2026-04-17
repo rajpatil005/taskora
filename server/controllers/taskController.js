@@ -2,6 +2,7 @@ import Task from "../models/Task.js";
 import Wallet from "../models/Wallet.js";
 import Transaction from "../models/Transaction.js";
 import { calculateDistance } from "../utils/distance.js";
+import { createNotification } from "./notificationController.js";
 
 export const createTask = async (req, res) => {
   try {
@@ -49,6 +50,17 @@ export const createTask = async (req, res) => {
     });
 
     await task.save();
+    await createNotification(
+      req.user._id,
+      `Task "${title}" created and reward locked in escrow`,
+      "system",
+      req,
+      {
+        _id: req.user._id,
+        name: req.user.name || "Someone",
+        profilePhoto: req.user.profilePhoto || null,
+      },
+    );
 
     // Lock reward amount in escrow
     wallet.balance -= rewardAmount;
@@ -213,6 +225,18 @@ export const acceptTask = async (req, res) => {
     task.acceptedAt = new Date();
     await task.save();
 
+    await createNotification(
+      task.owner,
+      `${req.user.name || "Someone"} accepted your task`,
+      "task",
+      req,
+      {
+        _id: req.user._id,
+        name: req.user.name,
+        profilePhoto: req.user.profilePhoto,
+      },
+    );
+
     res.json({ message: "Task accepted successfully", task });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -248,6 +272,30 @@ export const completeTask = async (req, res) => {
     task.completionPhoto = completionPhoto;
     task.completedAt = new Date();
     await task.save();
+
+    await createNotification(
+      req.user._id,
+      "Task marked as completed. Waiting for owner confirmation.",
+      "task",
+      req,
+      {
+        _id: req.user._id,
+        name: req.user.name,
+        profilePhoto: req.user.profilePhoto,
+      },
+    );
+
+    await createNotification(
+      task.owner,
+      "Task has been marked as completed",
+      "task",
+      req,
+      {
+        _id: req.user._id,
+        name: req.user.name,
+        profilePhoto: req.user.profilePhoto,
+      },
+    );
 
     res.json({ message: "Task completed successfully", task });
   } catch (error) {
@@ -322,6 +370,30 @@ export const confirmCompletion = async (req, res) => {
     task.confirmedAt = new Date();
     await task.save();
 
+    await createNotification(
+      task.acceptedBy,
+      "Payment released! Task completed successfully",
+      "alert",
+      req,
+      {
+        _id: req.user._id,
+        name: req.user.name,
+        profilePhoto: req.user.profilePhoto,
+      },
+    );
+
+    await createNotification(
+      task.owner,
+      "You confirmed task completion and payment was released",
+      "task",
+      req,
+      {
+        _id: req.user._id,
+        name: req.user.name,
+        profilePhoto: req.user.profilePhoto,
+      },
+    );
+
     res.json({ message: "Task completion confirmed", task });
   } catch (error) {
     console.error("CONFIRM ERROR:", error);
@@ -371,7 +443,7 @@ export const cancelTask = async (req, res) => {
     // Return funds to owner
     const wallet = await Wallet.findOne({ user: task.owner });
     wallet.balance += task.rewardAmount;
-    wallet.lockedEscrow -= task.rewardAmount;
+    wallet.lockedEscrow = Math.max(0, wallet.lockedEscrow - task.rewardAmount);
     await wallet.save();
 
     // Record transaction
@@ -389,6 +461,26 @@ export const cancelTask = async (req, res) => {
     task.cancelledAt = new Date();
     task.cancelReason = reason;
     await task.save();
+
+    if (task.acceptedBy) {
+      await createNotification(
+        task.acceptedBy,
+        "Task was cancelled by owner",
+        "alert",
+        req,
+        {
+          _id: req.user._id,
+          name: req.user.name,
+          profilePhoto: req.user.profilePhoto,
+        },
+      );
+    }
+
+    await createNotification(
+      task.owner,
+      "Your task was cancelled and funds refunded",
+      "system",
+    );
 
     res.json({ message: "Task cancelled successfully", task });
   } catch (error) {
@@ -480,6 +572,11 @@ export const deleteTask = async (req, res) => {
 
     // delete task
     await task.deleteOne();
+    await createNotification(
+      task.owner,
+      "Your task was deleted successfully",
+      "system",
+    );
 
     res.json({ message: "Task deleted successfully" });
   } catch (error) {

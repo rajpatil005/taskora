@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { getSocket } from "@/lib/socket";
 
 interface User {
   _id: string;
@@ -23,6 +24,7 @@ interface AuthContextType {
   loading: boolean;
   error: string | null;
   token: string | null;
+  socket: any;
   login: (email: string, password: string) => Promise<void>;
   register: (
     name: string,
@@ -32,6 +34,12 @@ interface AuthContextType {
   ) => Promise<void>;
   logout: () => void;
   updateUser: (userData: Partial<User>) => void;
+
+  unreadNotifications: number;
+  setUnreadNotifications: React.Dispatch<React.SetStateAction<number>>;
+
+  unreadMessages: number;
+  setUnreadMessages: React.Dispatch<React.SetStateAction<number>>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -43,10 +51,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [token, setToken] = useState<string | null>(null);
+  const [socket, setSocket] = useState(null);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const [unreadMessages, setUnreadMessages] = useState(0);
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
-  // 🔥 Initialize auth on mount (FIXED)
+  // Initialize auth on mount
   useEffect(() => {
     const initAuth = async () => {
       const storedToken = localStorage.getItem("taskora_token");
@@ -58,6 +69,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
       setToken(storedToken);
 
+      const s = getSocket(storedToken);
+      setSocket(s);
+
       try {
         const response = await fetch(`${API_URL}/api/auth/me`, {
           headers: {
@@ -65,25 +79,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           },
         });
 
-        // ✅ Token is valid
         if (response.ok) {
           const data = await response.json();
           setUser(data.user);
-        }
-
-        // 🔥 Token invalid → remove
-        else if (response.status === 401) {
+        } else if (response.status === 401) {
           localStorage.removeItem("taskora_token");
           setToken(null);
           setUser(null);
-        }
-
-        // ⚠️ Other errors → DON'T logout
-        else {
+        } else {
           console.warn("Auth check failed but not logging out");
         }
       } catch (err) {
-        // 🔥 IMPORTANT: network error → DO NOT logout
         console.error("Auth fetch failed (network issue):", err);
       } finally {
         setLoading(false);
@@ -93,7 +99,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     initAuth();
   }, [API_URL]);
 
-  // 🔥 LOGIN
+  // LOGIN
   const login = async (email: string, password: string) => {
     setError(null);
     setLoading(true);
@@ -112,10 +118,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       if (!response.ok) {
         throw new Error(data.message || "Login failed");
       }
-
       setToken(data.token);
       setUser(data.user);
       localStorage.setItem("taskora_token", data.token);
+
+      const s = getSocket(data.token);
+      setSocket(s);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Login failed";
       setError(errorMessage);
@@ -125,7 +133,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  // 🔥 REGISTER
+  // REGISTER
   const register = async (
     name: string,
     email: string,
@@ -149,10 +157,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       if (!response.ok) {
         throw new Error(data.message || "Registration failed");
       }
-
       setToken(data.token);
       setUser(data.user);
       localStorage.setItem("taskora_token", data.token);
+
+      const s = getSocket(data.token);
+      setSocket(s);
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : "Registration failed";
@@ -163,15 +173,93 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  // 🔥 LOGOUT (FIXED)
+  const fetchUnreadMessages = async (token: string) => {
+    try {
+      const res = await fetch(`${API_URL}/api/messages/unread-count`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await res.json();
+      setUnreadMessages(data.count);
+    } catch (err) {
+      console.log("Failed to fetch unread messages");
+    }
+  };
+
+  const fetchUnreadNotifications = async (token: string) => {
+    try {
+      const res = await fetch(`${API_URL}/api/notifications`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await res.json();
+
+      const unread = data.filter((n: any) => !n.isRead).length;
+      setUnreadNotifications(unread);
+    } catch (err) {
+      console.log("Failed to fetch unread notifications");
+    }
+  };
+
+  useEffect(() => {
+    if (!token || !socket) return;
+
+    const handleMessage = (data: any) => {
+      const currentPath = window.location.pathname;
+
+      if (currentPath.startsWith("/chat")) return;
+
+      setUnreadMessages((prev) => prev + 1);
+    };
+
+    socket.on("messageNotification", handleMessage);
+
+    return () => {
+      socket.off("messageNotification", handleMessage);
+    };
+  }, [token, socket]);
+
+  useEffect(() => {
+    if (token) {
+      fetchUnreadNotifications(token);
+      fetchUnreadMessages(token);
+    }
+  }, [token]);
+
+  useEffect(() => {
+    if (!token) return;
+
+    if (!socket) return;
+
+    const handleNotification = (data: any) => {
+      if (data.type !== "message") {
+        setUnreadNotifications((prev) => prev + 1);
+      }
+    };
+
+    socket.on("notification", handleNotification);
+
+    return () => {
+      socket.off("notification", handleNotification);
+    };
+  }, [token]);
+  // LOGOUT (FIXED)
   const logout = () => {
+    if (socket) {
+      socket.disconnect(); // ✅ IMPORTANT
+    }
+
     setUser(null);
-    setToken(null); // ✅ IMPORTANT
+    setToken(null);
     setError(null);
     localStorage.removeItem("taskora_token");
   };
 
-  // 🔥 UPDATE USER
+  // UPDATE USER
   const updateUser = (userData: Partial<User>) => {
     if (user) {
       setUser({ ...user, ...userData });
@@ -186,10 +274,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         loading,
         error,
         token,
+        socket,
         login,
         register,
         logout,
         updateUser,
+        unreadNotifications,
+        setUnreadNotifications,
+        unreadMessages,
+        setUnreadMessages,
       }}
     >
       {children}
@@ -197,7 +290,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   );
 };
 
-// 🔥 HOOK
+// HOOK
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {

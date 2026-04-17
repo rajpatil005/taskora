@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import Header from "@/components/Header";
 import { useAuth } from "@/lib/authContext";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -103,24 +104,7 @@ export default function ProfilePage() {
   return (
     <main className="min-h-screen bg-transparent text-white">
       {/* HEADER */}
-      <header className="border-b border-white/10 bg-transparent/90 backdrop-blur-xl sticky top-0 z-40">
-        <div className="container mx-auto px-4 py-6 flex items-center gap-4">
-          <Link href="/my-tasks">
-            <Button
-              onClick={() => router.back()}
-              variant="outline"
-              size="sm"
-              className="gap-2"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back
-            </Button>
-          </Link>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent">
-            Profile
-          </h1>{" "}
-        </div>
-      </header>
+      <Header title="Profile" />
 
       <div className="container mx-auto px-4 py-10 max-w-3xl space-y-8">
         {/* PROFILE CARD */}
@@ -266,15 +250,13 @@ export default function ProfilePage() {
               <div className="space-y-4">
                 {reviews.map((review) => (
                   <motion.div
+                    key={review._id}
                     variants={{
                       hidden: { opacity: 0, y: 20 },
                       show: { opacity: 1, y: 0 },
                     }}
                   >
-                    <Card
-                      key={review._id}
-                      className="p-6 bg-white/5 border border-white/10 backdrop-blur-xl transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_0_40px_rgba(139,92,246,0.2)]"
-                    >
+                    <Card className="p-6 bg-white/5 border border-white/10 backdrop-blur-xl transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_0_40px_rgba(139,92,246,0.2)]">
                       <div className="flex gap-4 mb-4">
                         <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
                           {review.reviewer.profilePhoto ? (

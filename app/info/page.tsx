@@ -1,11 +1,14 @@
 "use client";
 
 import { motion } from "framer-motion";
+import Header from "@/components/Header";
 import { useEffect, useRef, useState } from "react";
 import Lenis from "lenis";
 import Link from "next/link";
 import { getLenis } from "@/lib/lenis";
 import { ArrowLeft, ArrowUp } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
 
 const sections = [
   {
@@ -48,6 +51,7 @@ const sections = [
 
 export default function InfoPage() {
   const [active, setActive] = useState("help");
+  const router = useRouter();
 
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
 
@@ -100,23 +104,11 @@ export default function InfoPage() {
   };
 
   return (
-    <main className="relative min-h-screen text-white overflow-y-auto scroll-smooth">
-      {" "}
-      {/* ===== YOUR GLOBAL BG ALREADY APPLIES (NO NEED DUPLICATE) ===== */}
-      {/* BACK BUTTON */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="fixed top-6 left-6 z-50"
-      >
-        <Link href="/">
-          <button className="flex items-center gap-2 text-gray-300 hover:text-white transition">
-            <ArrowLeft size={18} />
-            Back
-          </button>
-        </Link>
-      </motion.div>
-      {/* SIDE NAV (PRO) */}
+    <main className="min-h-screen text-white relative z-10">
+      {/* ✅ HEADER */}
+      <Header title="About" />
+
+      {/* SIDE NAV */}
       <div className="hidden md:flex fixed left-6 top-1/2 -translate-y-1/2 flex-col gap-3 z-40">
         {sections.map((s) => (
           <button
