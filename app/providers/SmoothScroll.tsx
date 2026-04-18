@@ -13,7 +13,7 @@ export default function SmoothScrollProvider({
     const lenis = new Lenis({
       lerp: 0.08,
       smoothWheel: true,
-      smoothTouch: true,
+      smoothTouch: false,
     });
 
     setLenis(lenis);

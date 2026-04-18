@@ -869,10 +869,6 @@ html.lenis body {
   scroll-behavior: auto !important;
 }
 
-.lenis {
-  overflow: hidden;
-}
-
 .profile-active-card {
   background: linear-gradient(
     135deg,
