@@ -3,7 +3,11 @@ import { io, Socket } from "socket.io-client";
 let socket: Socket | null = null;
 let currentToken: string | null = null;
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+if (!API_URL) {
+  console.error("NEXT_PUBLIC_API_URL is missing");
+}
 
 export const getSocket = (token: string): Socket | null => {
   if (!token) return null;
