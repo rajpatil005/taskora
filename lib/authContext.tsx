@@ -55,7 +55,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [unreadMessages, setUnreadMessages] = useState(0);
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+  if (!API_URL) {
+    console.error("API_URL is missing in environment variables");
+  }
 
   // Initialize auth on mount
   useEffect(() => {
