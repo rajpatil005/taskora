@@ -14,15 +14,58 @@ import { useAuth } from "@/lib/authContext";
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [emailLoading, setEmailLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   const router = useRouter();
   const { toast } = useToast();
   const { login } = useAuth();
 
-  const handleLogin = async (e: React.FormEvent) => {
+  // Google Login
+  const handleGoogleLogin = async (credentialResponse: any) => {
+    setGoogleLoading(true);
+
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/auth/google`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            credential: credentialResponse.credential,
+          }),
+        },
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.message);
+
+      localStorage.setItem("taskora_token", data.token);
+
+      toast({
+        title: "Google Login Successful",
+        description: "Redirecting...",
+      });
+
+      window.location.href = "/dashboard";
+    } catch (err: any) {
+      toast({
+        title: "Google Login Failed",
+        description: err.message,
+        variant: "destructive",
+      });
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
+  // Email Login
+  const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    setEmailLoading(true);
 
     try {
       await login(email, password);
@@ -40,7 +83,7 @@ export default function LoginPage() {
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      setEmailLoading(false);
     }
   };
 
@@ -57,50 +100,9 @@ export default function LoginPage() {
           Welcome Back
         </h1>
         {/* Google login */}
-        <div className="mb-4 flex justify-center">
+        <div className="mb-4 flex flex-col items-center gap-2">
           <GoogleLogin
-            onSuccess={async (credentialResponse) => {
-              try {
-                const res = await fetch(
-                  `${process.env.NEXT_PUBLIC_API_URL}/api/auth/google`,
-                  {
-                    method: "POST",
-                    headers: {
-                      "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                      credential: credentialResponse.credential,
-                    }),
-                  },
-                );
-
-                const data = await res.json();
-
-                if (!res.ok) throw new Error(data.message);
-
-                localStorage.setItem("taskora_token", data.token);
-
-                toast({
-                  title: "Google Login Successful",
-                  description: "Redirecting...",
-                });
-                localStorage.setItem("taskora_token", data.token);
-
-                toast({
-                  title: "Google Login Successful",
-                  description: "Redirecting...",
-                });
-
-                // ✅ let AuthContext re-fetch user properly
-                window.location.href = "/dashboard";
-              } catch (err: any) {
-                toast({
-                  title: "Google Login Failed",
-                  description: err.message,
-                  variant: "destructive",
-                });
-              }
-            }}
+            onSuccess={handleGoogleLogin}
             onError={() => {
               toast({
                 title: "Google Login Failed",
@@ -109,6 +111,12 @@ export default function LoginPage() {
               });
             }}
           />
+
+          {googleLoading && (
+            <p className="text-sm text-gray-400 animate-pulse">
+              Authenticating with Google...
+            </p>
+          )}
         </div>
         {/* Divider */}
         <div className="flex items-center gap-3 my-4">
@@ -122,7 +130,7 @@ export default function LoginPage() {
           Sign in to continue to your dashboard
         </p>
 
-        <form onSubmit={handleLogin} className="flex flex-col gap-6">
+        <form onSubmit={handleEmailLogin} className="flex flex-col gap-6">
           {/* Email */}
           <div className="flex flex-col gap-2">
             <label className="text-sm font-medium text-gray-300">Email</label>
@@ -155,9 +163,13 @@ export default function LoginPage() {
             variant="primary"
             size="lg"
             className="mt-2"
-            disabled={loading}
+            disabled={emailLoading || googleLoading}
           >
-            {loading ? "Signing in..." : "Sign In"}
+            {emailLoading
+              ? "Signing in..."
+              : googleLoading
+                ? "Google signing in..."
+                : "Sign In"}{" "}
           </Button>
         </form>
 

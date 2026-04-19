@@ -3,8 +3,10 @@ import User from "../models/User.js";
 import Wallet from "../models/Wallet.js";
 import { generateToken } from "../config/jwt.js";
 import { validationResult } from "express-validator";
+import { createNotification } from "./notificationController.js";
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const SIGNUP_BONUS = 100;
 
 export const googleLogin = async (req, res) => {
   try {
@@ -42,11 +44,21 @@ export const googleLogin = async (req, res) => {
       user.avatarSeed = user._id.toString();
       await user.save();
 
-      const wallet = new Wallet({ user: user._id });
+      const wallet = new Wallet({
+        user: user._id,
+        balance: SIGNUP_BONUS,
+      });
       await wallet.save();
 
       user.wallet = wallet._id;
       await user.save();
+
+      await createNotification(
+        user._id,
+        "🎉 Welcome to Taskora! You received ₹100 signup bonus.",
+        "system",
+        req,
+      );
     }
 
     // GENERATE TOKEN
@@ -100,8 +112,18 @@ export const register = async (req, res) => {
     await user.save();
 
     // create wallet FIRST
-    const wallet = new Wallet({ user: user._id });
+    const wallet = new Wallet({
+      user: user._id,
+      balance: SIGNUP_BONUS,
+    });
     await wallet.save();
+
+    await createNotification(
+      user._id,
+      "🎉 Welcome to Taskora! You received ₹100 signup bonus.",
+      "system",
+      req,
+    );
 
     user.wallet = wallet._id;
     user.avatarSeed = user._id.toString();

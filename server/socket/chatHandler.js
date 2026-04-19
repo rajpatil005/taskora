@@ -5,7 +5,7 @@ export const setupChatSocket = (io) => {
   io.on("connection", (socket) => {
     console.log("User connected:", socket.id);
 
-    // 🔐 AUTH USER FROM TOKEN
+    // auth user from token
     const token = socket.handshake.auth?.token;
 
     let userId = null;
@@ -25,13 +25,13 @@ export const setupChatSocket = (io) => {
       console.log("Socket auth failed:", err.message);
     }
 
-    // 📦 JOIN TASK CHAT ROOM
+    // join task chat room
     socket.on("joinTask", (taskId) => {
       socket.join(taskId);
       console.log("Joined task room:", taskId);
     });
 
-    // 💬 OPTIONAL: leave task room
+    // leave task room
     socket.on("leaveTask", (taskId) => {
       socket.leave(taskId);
     });

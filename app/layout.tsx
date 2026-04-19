@@ -31,7 +31,9 @@ export default function RootLayout({
           <AuthProvider>
             <SmoothScroll>
               <Navbar />
-              {children}
+
+              <main className="pb-20 md:pb-0">{children}</main>
+
               <Toaster />
             </SmoothScroll>
           </AuthProvider>

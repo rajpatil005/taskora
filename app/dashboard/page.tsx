@@ -234,15 +234,15 @@ export default function DashboardPage() {
                 </Button>
               </div>
 
-              <div className="flex gap-2 overflow-x-auto pb-2 mb-6">
+              <div className="flex gap-1.5 overflow-x-auto pt-2 mb-4 justify-start">
                 {[5, 10, 25, 50, 100].map((r) => (
                   <button
                     key={r}
                     onClick={() => setRadius(r)}
-                    className={`px-4 py-1.5 rounded-full text-sm whitespace-nowrap border transition ${
+                    className={`flex-shrink-0 px-2 py-1 text-xs rounded-full border transition ${
                       radius === r
                         ? "bg-purple-600 border-purple-600 text-white"
-                        : "border-white/10 text-white/70 hover:bg-white/10"
+                        : "border-white/10 text-white/70"
                     }`}
                   >
                     {r} km
@@ -251,16 +251,15 @@ export default function DashboardPage() {
               </div>
 
               {/* 🧩 CATEGORY FILTERS */}
-              <div className="flex flex-wrap gap-2 pb-2 mb-8">
-                {" "}
+              <div className="flex gap-1.5 overflow-x-auto pb-2 mb-6 justify-start">
                 {categories.map((cat) => (
                   <button
                     key={cat.value}
                     onClick={() => setSelectedCategory(cat.value)}
-                    className={`px-4 py-1.5 rounded-full text-sm whitespace-nowrap border transition ${
+                    className={`flex-shrink-0 px-2 py-1 text-xs rounded-full border transition ${
                       selectedCategory === cat.value
                         ? "bg-purple-600 border-purple-600 text-white"
-                        : "border-white/10 text-white/70 hover:bg-white/10"
+                        : "border-white/10 text-white/70"
                     }`}
                   >
                     {cat.label}
@@ -269,20 +268,32 @@ export default function DashboardPage() {
               </div>
 
               {/* 📊 SUMMARY */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl mb-10">
-                <Card className="p-4">
-                  <p className="text-xs text-white/50">Total</p>
-                  <p className="text-xl font-semibold">{totalTasks}</p>
+              <div className="flex sm:grid sm:grid-cols-3 gap-2 sm:gap-4 max-w-3xl mx-auto mb-10 sm:overflow-visible justify-center">
+                {" "}
+                <Card className="p-3 sm:p-4 min-w-[90px] text-center">
+                  {" "}
+                  <p className="text-[10px] sm:text-xs text-white/50">Total</p>
+                  <p className="text-lg sm:text-xl font-semibold">
+                    {totalTasks}
+                  </p>
                 </Card>
-
-                <Card className="p-4">
-                  <p className="text-xs text-white/50">Completed</p>
-                  <p className="text-xl font-semibold">{completedTasks}</p>
+                <Card className="p-3 sm:p-4 min-w-[90px] text-center">
+                  {" "}
+                  <p className="text-[10px] sm:text-xs text-white/50">
+                    Completed
+                  </p>
+                  <p className="text-lg sm:text-xl font-semibold">
+                    {completedTasks}
+                  </p>
                 </Card>
-
-                <Card className="p-4">
-                  <p className="text-xs text-white/50">Pending</p>
-                  <p className="text-xl font-semibold">{pendingTasks}</p>
+                <Card className="p-3 sm:p-4 min-w-[90px] text-center">
+                  {" "}
+                  <p className="text-[10px] sm:text-xs text-white/50">
+                    Pending
+                  </p>
+                  <p className="text-lg sm:text-xl font-semibold">
+                    {pendingTasks}
+                  </p>
                 </Card>
               </div>
 
