@@ -37,7 +37,14 @@ export const createNotification = async (
             profilePhoto: actor.profilePhoto || null,
             avatarSeed: actor.avatarSeed || actor._id,
           }
-        : undefined,
+        : type === "system"
+          ? {
+              _id: "system",
+              name: "System",
+              profilePhoto: "/app_icons/pfp.png",
+              avatarSeed: "system",
+            }
+          : undefined,
     });
 
     const io = req?.app?.get("io");
