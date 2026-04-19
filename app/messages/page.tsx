@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import Header from "@/components/Header";
 import { useAuth } from "@/lib/authContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Card } from "@/components/ui/card";
@@ -104,18 +105,7 @@ export default function MessagesPage() {
     <ProtectedRoute>
       <main className="min-h-screen bg-transparent text-white">
         {/* HEADER */}
-        <header className="border-b border-white/10 bg-transparent/90 backdrop-blur-xl sticky top-0 z-40">
-          <div className="container mx-auto px-4 py-6 flex items-center gap-4">
-            <Link href="/dashboard">
-              <Button variant="outline" size="sm" className="gap-2">
-                <ArrowLeft className="w-4 h-4" />
-                Back
-              </Button>
-            </Link>
-
-            <h1 className="text-3xl font-bold">Messages</h1>
-          </div>
-        </header>
+        <Header title="Messages" />
 
         {/* ✅ FLEX LAYOUT */}
         <div className="flex h-[calc(100vh-100px)]">

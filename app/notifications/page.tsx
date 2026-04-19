@@ -10,7 +10,6 @@ import { Spinner } from "@/components/ui/spinner";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
 import { itemVariants } from "@/lib/animations";
-import { ArrowLeft } from "lucide-react";
 import { getSocket } from "@/lib/socket";
 import { useRouter } from "next/navigation";
 import { getAvatarUrl } from "@/lib/avatar";
@@ -157,7 +156,8 @@ export default function NotificationsPage() {
     <main className="min-h-screen text-white relative z-10">
       {/* HEADER */}
       <header className="border-b border-white/10 bg-transparent/90 backdrop-blur-xl sticky top-0 z-40">
-        <div className="container mx-auto px-4 py-6 flex items-center justify-between">
+        <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 flex items-center justify-between gap-2">
+          {" "}
           <div className="flex items-center gap-4">
             <Link href="/dashboard">
               <Button
@@ -166,14 +166,13 @@ export default function NotificationsPage() {
                 size="sm"
                 className="gap-2"
               >
-                <ArrowLeft className="w-4 h-4" />
                 Back
               </Button>
             </Link>
-
-            <h1 className="text-3xl font-bold">Notifications</h1>
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">
+              Notifications
+            </h1>{" "}
           </div>
-
           <Button
             variant="ghost"
             size="sm"
