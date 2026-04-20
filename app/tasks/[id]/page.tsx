@@ -119,8 +119,12 @@ export default function TaskDetailPage() {
   }, []);
 
   const handleAcceptTask = async () => {
-    if (!token || !_id) return;
+    if (!_id) return;
 
+    if (!token) {
+      setLoading(false);
+      return;
+    }
     try {
       setActionLoading(true);
 
@@ -431,80 +435,70 @@ export default function TaskDetailPage() {
     }
   };
 
-  if (loading) {
-    return (
-      <ProtectedRoute>
-        <main className="min-h-screen bg-background flex items-center justify-center">
-          <div className="text-muted-foreground">Loading...</div>
-        </main>
-      </ProtectedRoute>
-    );
-  }
-
-  if (!task) {
-    return (
-      <ProtectedRoute>
-        <main className="min-h-screen bg-background">
-          <div className="container mx-auto px-4 py-8 text-center">
-            <p className="text-muted-foreground">Task not found</p>
-          </div>
-        </main>
-      </ProtectedRoute>
-    );
-  }
-
   const userId = user?._id;
 
   // Check if task.owner exists before comparing
   const isTaskOwner =
-    userId && task.owner && userId.toString() === task.owner._id?.toString();
+    userId && task?.owner && userId.toString() === task.owner._id?.toString();
 
   // Check if task.acceptedBy exists before comparing
   const isTaskWorker =
     userId &&
-    task.acceptedBy &&
+    task?.acceptedBy &&
     userId.toString() === task.acceptedBy._id?.toString();
+
   const alreadyReviewed =
     (isTaskOwner && task.isReviewedByOwner) ||
     (isTaskWorker && task.isReviewedByWorker);
+
+  if (loading || authLoading) {
+    return (
+      <ProtectedRoute>
+        <main className="min-h-screen bg-transparent text-white flex items-center justify-center">
+          <Spinner className="h-6 w-6" />
+        </main>
+      </ProtectedRoute>
+    );
+  }
+
   return (
     <ProtectedRoute>
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-xl shadow-lg p-6 w-[400px]">
-            <h2 className="text-lg font-semibold mb-2">Delete Task</h2>
+      <main className="min-h-screen bg-transparent text-white">
+        {" "}
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+            <div className="bg-white rounded-xl shadow-lg p-6 w-[400px]">
+              <h2 className="text-lg font-semibold mb-2">Delete Task</h2>
 
-            <p className="text-sm text-gray-600 mb-6">
-              Are you sure you want to delete this task? This action cannot be
-              undone.
-            </p>
+              <p className="text-sm text-gray-600 mb-6">
+                Are you sure you want to delete this task? This action cannot be
+                undone.
+              </p>
 
-            <div className="flex justify-end gap-3">
-              <Button
-                variant="outline"
-                onClick={() => setShowDeleteConfirm(false)}
-              >
-                Cancel
-              </Button>
+              <div className="flex justify-end gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowDeleteConfirm(false)}
+                >
+                  Cancel
+                </Button>
 
-              <Button
-                variant="destructive"
-                onClick={() => handleDeleteTask(task!._id)}
-                disabled={actionLoading}
-              >
-                {actionLoading ? "Deleting..." : "Delete"}
-              </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => handleDeleteTask(task!._id)}
+                  disabled={actionLoading}
+                >
+                  {actionLoading ? "Deleting..." : "Delete"}
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
-      <main className="min-h-screen bg-transparent text-white">
+        )}
         {/* HEADER */}
         <Header title="Task Details" />
-
         <div className="container mx-auto px-4 py-6 min-h-0">
           <div
-            className={`flex gap-5 items-stretch min-h-0 w-full overflow-x-hidden ${isMobile ? "" : "h-[calc(100dvh-8.5rem)] max-h-[calc(100dvh-8.5rem)]"}] ${
+            className={`flex gap-5 items-stretch min-h-0 w-full overflow-x-hidden ${isMobile ? "" : "h-[calc(100dvh-8.5rem)] max-h-[calc(100dvh-8.5rem)]"} ${
               showChat ? "" : "justify-center"
             }`}
           >
